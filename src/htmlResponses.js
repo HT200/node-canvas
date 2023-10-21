@@ -33,5 +33,5 @@ module.exports = {
   getIndex,
   getCSS,
   getCanvas,
-  getServer
+  getServer,
 };

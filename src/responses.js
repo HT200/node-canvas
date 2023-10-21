@@ -14,11 +14,11 @@ const respondJSONMeta = (request, response, status) => {
 
 const getJSON = (message, id) => ({ message, id });
 const getDrawing = (request, response) => respond(request, response, 200, getJSON(drawings, 'Success'));
-//const notReal = (request, response) => respond(request, response, 404, getJSON('', 'Not Found'));
+// const notReal = (request, response) => respond(request, response, 404, getJSON('', 'Not Found'));
 const notFound = (request, response) => respond(request, response, 404, getJSON('The page you are looking for was not found.', 'Not Found'));
 
 const getDrawingMeta = (request, response) => respondJSONMeta(request, response, 200);
-//const notRealMeta = (request, response) => respondJSONMeta(request, response, 400);
+// const notRealMeta = (request, response) => respondJSONMeta(request, response, 400);
 
 const addDrawing = (request, response, body) => {
   const responseJSON = {
