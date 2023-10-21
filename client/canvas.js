@@ -15,25 +15,78 @@ let smouseX, smouseY;
 let minLength = 1;
 let slider;
 let buttons = [];
+let sButton, gButton;
 let canvas;
+let isGallery = false;
+let isCtxLoaded = false;
+let currentPage = 0;
+let ctxs;
+let pageCount = 0;
+
 
 function setup() {
 	canvas = createCanvas(600, 600);
-	background(100);
 	colorUIDistance = 500 / colors.length;
+
+  // Create width slider
 	slider = createSlider(1, 10, 5, 1);
 	slider.position(window.innerWidth / 2 + 209, window.innerHeight/2 + 200 + colorUIRadius);
 	slider.style('width', '80px');
-	buttons.push(createDOMButton('undo', 210, -270, 80, 40, 30, undoButton));
-	buttons.push(createDOMButton('redo', 210, -210, 80, 40, 30, redoButton));
-	buttons.push(createDOMButton('reset', 210, -150, 80, 40, 28, resetButton));
-	buttons.push(createDOMButton('save', 210, -90, 80, 40, 30, saveButton));
+
+  // Create UI buttons
+  buttons.push(createDOMButton('Undo', 210, -270, 80, 40, 27, undoButton));
+	buttons.push(createDOMButton('Redo', 210, -210, 80, 40, 27, redoButton));
+	buttons.push(createDOMButton('Reset', 210, -150, 80, 40, 25, resetButton));
+
+  // Create p5.js graphics
+  resetGraphics();
+
+  const nameForm = document.querySelector("#nameForm");
+  gButton = document.querySelector('.gallery');
+  
+  // Post drawing event
+  const addDrawing = (e) => {
+    e.preventDefault();
+    sendPost(nameForm);
+    return false;
+  }
+
+  const getDrawing = (e) => {
+    // Update gallery button and UI
+    if (!isGallery){
+      buttons.forEach(b => b.obj.hide());
+      slider.hide();
+      gButton.innerHTML = 'Back to Drawing';
+      currentPage = 0;
+      isCtxLoaded = false;
+
+      // Get drawing event
+      e.preventDefault();
+      requestUpdate();
+    }
+    else {
+      isGallery = false;
+      buttons.forEach(b => b.obj.show());
+      slider.show();
+      gButton.innerHTML = 'Gallery';
+    }
+
+    return false;
+  }
+
+  nameForm.addEventListener('submit', addDrawing);
+  gButton.onclick = (e) => getDrawing(e);
+	sButton = document.querySelector('.submit');
 }
 
 function draw() {
-	isHover = false;
+  clear();
+	isGallery ? drawGallery() : drawCanvas();
+}
+
+const drawCanvas = () => {
+  isHover = false;
 	isInCanvas = (mouseX > 0) && (mouseX < 500) && (mouseY > 0) && (mouseY < 500);
-	clear();
 	drawRect(0, 0, 500, 500, 'white');
 	
 	// Draw all the lines and strokes
@@ -48,6 +101,42 @@ function draw() {
 	
 	// If the user is drawing, check for new line
 	if (isDrawing && mouseIsPressed) checkLine();
+  sButton.disabled = !(strokes.length > 0);
+}
+
+const drawGallery = () => {
+  push();
+  fill('maroon');
+  rect(0, 0, 600, 600);
+  if (!isCtxLoaded){
+    resetGraphics();
+    let keys = Object.keys(drawings);
+    let fp = pageCount * 4;
+    let picCount = min(galleryCount - fp, 4);
+    for (let i = fp; i < fp + picCount; i++){
+      let cStrokes = drawings[keys[i]].drawing;
+      for (let j = 0; j < cStrokes.length; j++) {
+        for (let k = 0; k < cStrokes[j].length; k++){
+          let s = cStrokes[j];
+          let cLine = s[k];
+          console.log(cLine);
+          if (cLine != undefined){
+            ctxs[i - fp].strokeWeight(cLine.width);
+            ctxs[i - fp].stroke(cLine.color);
+            ctxs[i - fp].line(cLine.p1.x, cLine.p1.y, cLine.p2.x, cLine.p2.y);
+          }
+        }
+      }
+      //drawStrokeCtx(cStrokes[j], ctxs[i - fp]);
+    }
+    isCtxLoaded = true;
+  }
+
+  image(ctxs[0], 50, 50, 225, 225);
+  image(ctxs[1], 50, 325, 225, 225);
+  image(ctxs[2], 325, 50, 225, 225);
+  image(ctxs[3], 325, 325, 225, 225);
+  pop();
 }
 
 // Check if the mouse in the canvas; if it is, start drawing when the mouse is pressed
@@ -98,6 +187,18 @@ const drawStroke = (s) => {
 	}
 }
 
+// Draw out all lines from a stroke within a graphic context
+const drawStrokeCtx = (s, ctx) => {
+	if (s.length > 0){
+		for (let i = 0; i < s.length; i++){
+			let cLine = s[i];
+			ctx.strokeWeight(cLine.width);
+			ctx.stroke(cLine.color);
+			ctx.line(cLine.p1.x, cLine.p1.y, cLine.p2.x, cLine.p2.y);
+		}
+	}
+}
+
 // Draw UI elements
 const drawUI = () => {
 	push();
@@ -128,7 +229,6 @@ const getCursor = () => {
 const undoButton = () => { if(strokes.length > 0) redos.push(strokes.pop()); };
 const redoButton = () => { if(redos.length > 0) strokes.push(redos.pop()); };
 const resetButton = () => {
-	console.log(strokes);
 	if (strokes.length <= 0) return;
 	let temp = [];
 	
@@ -138,13 +238,6 @@ const resetButton = () => {
 		while (cs.length > 0) temp.push(cs.pop());
 	}
 	redos.push(temp);
-	console.log(redos);
-};
-
-// Download drawing to user's device
-let saveButton = () => {
-	let savedImg = canvas.get(0, 0, 500, 500);
-	savedImg.save('my-painting', 'png');
 };
 
 // Draw a color option
@@ -206,6 +299,14 @@ const createDOMButton = (name, x, y, w, h, fs, f) => {
 	
 	let button = {obj: temp, x: x, y: y};
 	return button;
+}
+
+const resetGraphics = () => {
+  ctxs = [];
+  for (let i = 0; i < 4; i++) {
+    ctxs.push(createGraphics(500, 500));
+    ctxs[i].background('white');
+  }
 }
 
 const clamp = (num) => Math.min(Math.max(num, 0), 500);

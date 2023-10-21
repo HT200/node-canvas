@@ -1,6 +1,5 @@
 const http = require('http');
 const url = require('url');
-const query = require('querystring');
 const htmlHandler = require('./htmlResponses.js');
 const responseHandler = require('./responses.js');
 
@@ -11,9 +10,13 @@ const urlStruct = {
     '/': htmlHandler.getIndex,
     '/style.css': htmlHandler.getCSS,
     '/canvas.js': htmlHandler.getCanvas,
+    '/server.js': htmlHandler.getServer,
+    '/getDrawing': responseHandler.getDrawing,
+    '/addDrawing': responseHandler.addDrawing,
     notFound: responseHandler.notFound,
   },
   HEAD: {
+    '/addDrawing': responseHandler.addDrawingMeta,
   },
 };
 
@@ -32,15 +35,15 @@ const parseBody = (request, response, handler) => {
 
   request.on('end', () => {
     const bodyString = Buffer.concat(body).toString();
-    const bodyParams = query.parse(bodyString);
+    const bodyParams = JSON.parse(bodyString);
 
     handler(request, response, bodyParams);
   });
 };
 
 const handlePost = (request, response, parsedUrl) => {
-  if (parsedUrl.pathname === '/addUser') {
-    parseBody(request, response, responseHandler.addUser);
+  if (parsedUrl.pathname === '/addDrawing') {
+    parseBody(request, response, responseHandler.addDrawing);
   }
 };
 

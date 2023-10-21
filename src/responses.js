@@ -1,4 +1,5 @@
-const drawings = {};
+const drawings = { count: 0, draw: {} };
+let count = 0;
 
 const respond = (request, response, status, object) => {
   response.writeHead(status, { 'Content-Type': 'application/json' });
@@ -13,30 +14,33 @@ const respondJSONMeta = (request, response, status) => {
 
 const getJSON = (message, id) => ({ message, id });
 const getDrawing = (request, response) => respond(request, response, 200, getJSON(drawings, 'Success'));
-const notReal = (request, response) => respond(request, response, 404, getJSON('', 'Not Found'));
+//const notReal = (request, response) => respond(request, response, 404, getJSON('', 'Not Found'));
 const notFound = (request, response) => respond(request, response, 404, getJSON('The page you are looking for was not found.', 'Not Found'));
 
 const getDrawingMeta = (request, response) => respondJSONMeta(request, response, 200);
-const notRealMeta = (request, response) => respondJSONMeta(request, response, 400);
+//const notRealMeta = (request, response) => respondJSONMeta(request, response, 400);
 
 const addDrawing = (request, response, body) => {
   const responseJSON = {
     message: 'Your drawing needs a name!',
   };
 
-  if (!body.name) {
+  if (!body.name || !body.user) {
     responseJSON.id = 'missingParams';
     return respond(request, response, 400, responseJSON);
   }
 
   let responseCode = 204;
-  if (!drawings[body.name]) {
+  if (!drawings[body.id]) {
     responseCode = 201;
-    drawings[body.name] = {};
+    drawings.draw[body.id] = {};
+    count++;
+    drawings.count = count;
   }
 
-  drawings[body.name].user = body.user;
-  drawings[body.name].drawing = body.drawing;
+  drawings.draw[body.id].name = body.name;
+  drawings.draw[body.id].user = body.user;
+  drawings.draw[body.id].drawing = body.drawing;
 
   if (responseCode === 201) {
     responseJSON.message = 'Created Successfully';
@@ -47,7 +51,10 @@ const addDrawing = (request, response, body) => {
 };
 
 module.exports = {
-  notReal,
-  notRealMeta,
+  // notReal,
+  // notRealMeta,
+  getDrawing,
+  getDrawingMeta,
+  addDrawing,
   notFound,
 };

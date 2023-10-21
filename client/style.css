@@ -32,11 +32,44 @@ input, label {
   display:block;
 }
 
-input {
+input:not(.button) {
   text-align: center;
   font-size: 20px;
   width: 250px;
   height: 40px;
+}
+
+.button {
+  padding: 0;
+  margin: auto;
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  width: 250px;
+  font-size: 25px; 
+}
+
+@media only screen and (max-height: 950px) {
+  .submit {
+    top: 85vh;
+  }
+
+  .gallery {
+    top: 100vh;
+  }
+}
+
+@media only screen and (min-height: 951px) {
+  .submit {
+    top: 570px;
+  }
+
+  .gallery {
+    top: 720px;
+  }
 }
 
 label {
